@@ -12,8 +12,6 @@ load_dotenv()
 
 OR_API_KEY = os.getenv("OPENROUTER_API_KEY")
 TV_API_KEY = os.getenv("TAVILY_API_KEY")
-# "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free", "nousresearch/hermes-3-llama-3.1-405b:free","meta-llama/llama-3.3-70b-instruct:free","google/gemma-3-27b-it:free",
-# ── Model rotation list ───────────────────────────────────────────────────────
 MODELS = [
     "openai/gpt-oss-20b:free",
     "openai/gpt-oss-120b:free",
@@ -40,7 +38,6 @@ NUM_QUERIES = 40
 OUTPUT_FILE = "report_final.md"
 
 
-# ── Utils ─────────────────────────────────────────────────────────────────────
 
 def ask_llm(prompt: str) -> str:
     attempts = []
@@ -94,7 +91,6 @@ def clean_json_string(raw: str) -> str:
     return match.group() if match else "{}"
 
 
-# ── Step 1 ────────────────────────────────────────────────────────────────────
 
 def generate_queries(article: str) -> dict:
     print("Step 1/3 — Analyzing article and generating targeted queries...")
@@ -144,7 +140,6 @@ ARTICLE:
         }
 
 
-# ── Step 2 ────────────────────────────────────────────────────────────────────
 
 def search_and_scrape(queries: list) -> list[dict]:
     print(f"Step 2/3 — Searching and Scraping with Tavily AI...")
@@ -152,7 +147,6 @@ def search_and_scrape(queries: list) -> list[dict]:
     seen_urls = set()
 
     for i, q in enumerate(queries):
-        # Support both formats: new (dict) and old (string with site:)
         if isinstance(q, dict):
             clean_query = q.get("q", "").strip()
             domain = q.get("domain")
@@ -202,7 +196,7 @@ def search_and_scrape(queries: list) -> list[dict]:
     return results
 
 
-MIN_CONTENT_LENGTH = 500  # Minimum character length for a page to be considered "valuable"
+MIN_CONTENT_LENGTH = 500
 
 
 def filter_results(results: list[dict]) -> list[dict]:
@@ -215,7 +209,6 @@ def filter_results(results: list[dict]) -> list[dict]:
             print(f"   [FILTER] Discarded (insufficient content: {length} characters): {r['url'][:60]}")
             continue
 
-        # Discard pages that look like errors or login walls
         red_flags = [
             "access denied", "403 forbidden", "404 not found",
             "sign in to continue", "please log in", "enable javascript",
@@ -231,7 +224,7 @@ def filter_results(results: list[dict]) -> list[dict]:
 
     print(f"   [FILTER] Kept {len(filtered)}/{len(results)} results after filtering.")
     return filtered
-# ── Step 3 ────────────────────────────────────────────────────────────────────
+
 
 def classify(result: dict, full_article: str) -> dict:
     prompt = f"""You are an academic research analyst. Your task is to determine how a webpage references or uses a source article.
@@ -282,7 +275,6 @@ def generate_report(meta: dict, search_results: list[dict], article_file: str) -
     unrelated = [r for r in search_results if not r.get("cls", {}).get("related")]
     total = len(search_results)
 
-    # Statistics
     by_type = {}
     by_confidence = {"high": 0, "medium": 0, "low": 0}
     for r in related:
@@ -292,8 +284,7 @@ def generate_report(meta: dict, search_results: list[dict], article_file: str) -
         by_confidence[c] = by_confidence.get(c, 0) + 1
 
     report = f"# Content Usage Analysis: {article_file}\n\n"
-
-    # Methodology
+    
     report += "## Methodology\n\n"
     report += f"1. **Source article**: `{article_file}` — analyzed in full\n"
     report += f"2. **Query generation**: LLM ({len(MODELS)} models with random rotation) generated {NUM_QUERIES} targeted search queries covering Reddit, Quora, X/Twitter, and academic sources\n"
@@ -302,7 +293,6 @@ def generate_report(meta: dict, search_results: list[dict], article_file: str) -
     report += f"5. **Classification**: Each page compared to source article by LLM using 6-category taxonomy with confidence scoring\n"
     report += f"6. **Models used**: {', '.join(MODELS)}\n\n"
 
-    # Statistics
     report += "## Statistics\n\n"
     report += f"- Pages analyzed: {total}\n"
     report += f"- Related found: {len(related)} ({len(related) * 100 // total if total else 0}%)\n"
@@ -315,10 +305,8 @@ def generate_report(meta: dict, search_results: list[dict], article_file: str) -
         report += f"- {c}: {by_confidence[c]}\n"
     report += "\n"
 
-    # Research summary
     report += f"## Research Summary\n\n{meta.get('summary', 'N/A')}\n\n"
 
-    # Related results
     report += f"## Related Pages ({len(related)})\n\n"
     for i, r in enumerate(related, 1):
         cls = r['cls']
@@ -329,13 +317,12 @@ def generate_report(meta: dict, search_results: list[dict], article_file: str) -
         report += f"- **Evidence:** {cls.get('evidence')}\n"
         report += f"- **Summary:** {cls.get('summary')}\n\n"
 
-    # Unrelated results
+
     report += f"## Discarded as Unrelated ({len(unrelated)})\n\n"
     for r in unrelated:
         report += f"- [{r['title']}]({r['url']}) — `{r['cls'].get('usage_type', 'n/a')}`\n"
 
     return report
-# ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
     path = Path(ARTICLE_FILE)
