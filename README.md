@@ -17,7 +17,7 @@ An automated system designed to track and analyze how specific articles (scienti
 
 ##  Technology Stack
 
-*   **Language**: Python 3.10+
+*   **Language**: Python 3.14+
 *   **Orchestration**: OpenAI SDK (compatible with OpenRouter for model rotation).
 *   **Search Engine**: [Tavily AI](https://tavily.com/) (Optimized for LLM agents).
 *   **Models**: Supports high-parameter models via OpenRouter to ensure high classification accuracy.
