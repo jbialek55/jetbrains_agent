@@ -126,18 +126,7 @@ ARTICLE:
         print(f"   Successfully generated {len(queries)} queries.")
         return parsed
     except Exception as e:
-        print(f"   ⚠ Failed to parse JSON ({e}). Utilizing fallback queries.")
-        return {
-            "queries": [
-                {"q": "Dyatlov Pass avalanche evidence",         "domain": "reddit.com"},
-                {"q": "Dyatlov Pass mystery theories",           "domain": "reddit.com"},
-                {"q": "Dyatlov Pass what really happened",       "domain": "quora.com"},
-                {"q": "Dyatlov Pass incident",                   "domain": "x.com"},
-                {"q": "Dyatlov Pass forensic analysis",          "domain": None},
-                {"q": "Dyatlov Pass infrasound hypothesis",      "domain": None},
-            ],
-            "summary": "Fallback queries — LLM failed to respond."
-        }
+         raise ValueError("Failed to parse json")
 
 
 
